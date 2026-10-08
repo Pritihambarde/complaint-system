@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CS Department Complaint System</title>
+<style>
+:root{
+  --bg:#f7f7f5; --card:#fff; --ink:#1f1f1f; --mute:#6b6b6b; --line:#e4e2dd;
+  --pri:#a8532f; --pri2:#8a4324; --ok:#3d6b52; --warn:#b3752f; --bad:#b3312c;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#171614; --card:#211f1c; --ink:#ece8e2; --mute:#9c968c; --line:#38352f; }
+}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);line-height:1.5}
+header{background:var(--card);color:var(--ink);padding:14px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:5;border-bottom:1px solid var(--line)}
+header h1{font-size:16px;margin:0;flex:1;font-weight:600;color:var(--pri)}header span{font-size:13px;color:var(--mute)}
+main{max-width:1050px;margin:26px auto;padding:0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px;margin-bottom:16px}
+h2{margin:0 0 12px;font-size:17px;font-weight:600}h3{margin:0 0 8px;font-size:14px;font-weight:600}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:var(--bg);color:var(--ink);margin-bottom:10px}
+textarea{min-height:110px;resize:vertical}label{font-size:12.5px;color:var(--mute);display:block;margin-bottom:4px}
+button{background:var(--pri);color:#fff;border:0;border-radius:8px;padding:9px 16px;font:inherit;cursor:pointer}
+button:hover{background:var(--pri2)}button.ghost{background:transparent;color:var(--pri);border:1px solid var(--line)}button.sm{padding:6px 11px;font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1;min-width:120px}.row>button{flex:0 0 auto}
+.tabs{display:flex;gap:6px;margin-bottom:14px}.tabs button{background:transparent;color:var(--mute);border:1px solid var(--line);white-space:nowrap;padding:10px 12px;font-size:13px}.tabs button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.b{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;margin-right:5px;background:var(--bg);border:1px solid var(--line);color:var(--mute)}
+.b.crit{background:#fbe7e4;color:var(--bad);border-color:#f0cec8}.b.high{background:#faf0e2;color:#9a5b1f;border-color:#f0ddbe}.b.med{background:#f6f2df;color:#8a7524;border-color:#e8dfb8}.b.low{background:#e7f0ea;color:var(--ok);border-color:#cfe1d4}
+.b.st{background:#e5eef2;color:#3a6f83;border-color:#cfe0e6}.b.esc{background:#f3e3ea;color:#95375f;border-color:#e7cfda}
+.cc{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.cc h3 small{color:var(--mute);font-weight:400}.mute{color:var(--mute);font-size:13px}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 18px;margin:10px 0;padding:10px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.meta div{font-size:13px;color:var(--ink)}.meta div b{display:block;font-size:11.5px;font-weight:600;color:var(--mute);margin-bottom:2px}
+ul.tl{margin:8px 0 0;padding-left:18px;font-size:13px}.act{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}.act>*{margin:0;flex:1;min-width:110px}.act button{flex:0 0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.stat{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px}.stat b{font-size:22px;display:block;color:var(--pri)}
+.bar{display:flex;align-items:center;gap:8px;font-size:13px;margin:4px 0}.bar i{display:block;height:12px;background:var(--pri);border-radius:4px}.bar span:first-child{width:110px}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:11px 18px;border-radius:8px;color:#fff;display:none;z-index:9;max-width:90%}
+#notes{position:absolute;right:14px;top:56px;background:var(--card);color:var(--ink);width:330px;max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px;display:none;box-shadow:0 8px 24px #0002}
+#notes p{margin:0;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}.hide{display:none!important}
+.result{background:#eaf2ec;border:1px solid #cfe1d4;border-radius:10px;padding:12px;margin-top:12px;font-size:14px}
+
+.auth{display:block;max-width:480px;margin:40px auto;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--line)}
+.authf{padding:26px 28px 28px}.ahead{text-align:center;padding:30px 28px 6px}.ahead h1{margin:0 0 6px;font-size:20px;color:var(--pri);font-weight:600}.ahead p{margin:0;color:var(--mute);font-size:13.5px}.req{color:var(--bad);font-weight:700;margin-left:2px}.act{align-items:flex-end}.act label{margin-bottom:4px}.act input,.act select{margin-bottom:0}.err{color:var(--bad);font-size:12px;min-height:16px;margin:-6px 0 6px}input.bad{border-color:var(--bad)}
+.pw{position:relative}.pw input{padding-right:64px}.pw button{position:absolute;right:6px;top:5px;padding:4px 9px;font-size:12px;background:transparent;color:var(--pri);border:1px solid var(--line)}
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:12px;color:var(--mute);margin:-4px 0 8px}.rules .ok{color:var(--ok)}
+.meter{height:5px;background:#e5e7eb;border-radius:9px;margin:0 0 10px;overflow:hidden}.meter i{display:block;height:100%;width:0;transition:.2s}
+.ptitle{margin:0 0 14px}button:disabled{opacity:.6;cursor:not-allowed}.rl{background:#ffffff33;border-radius:99px;padding:2px 10px;font-size:12px}
+@media(max-width:760px){.auth{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>AI Complaint System · Computer Science Department</h1><span id="who"></span>
+<button class="ghost sm hide" id="bell" onclick="toggleNotes()">Alerts <b id="cnt"></b></button>
+<button class="ghost sm hide" id="out" onclick="logout()">Logout</button><div id="notes"></div></header>
+<main id="app"></main><div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const S = { token: sessionStorage.token || "", role: sessionStorage.role || "", name: sessionStorage.name || "", level: +sessionStorage.level || 0, dept: sessionStorage.dept || "" };
+const PRI = { Critical: "crit", High: "high", Medium: "med", Low: "low" };
+const msg = d => Array.isArray(d.detail) ? d.detail.map(e => e.msg.replace("Value error, ", "")).join(". ") : (d.detail || "Something went wrong");
+const when = t => t ? new Date(t + "Z").toLocaleString() : "-";
+
+function toast(t, ok = true) { const e = $("#toast"); e.textContent = t; e.style.background = ok ? "#3d6b52" : "#b3312c"; e.style.display = "block"; setTimeout(() => e.style.display = "none", 3500); }
+async function api(path, { method = "GET", body, form } = {}) {
+  const h = S.token ? { Authorization: "Bearer " + S.token } : {}; let b = form;
+  if (body) { h["Content-Type"] = "application/json"; b = JSON.stringify(body); }
+  const r = await fetch(path, { method, headers: h, body: b });
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 401 && S.token) { logout(); throw new Error("Session expired. Please log in again"); }
+  if (!r.ok) throw new Error(msg(d)); return d;
+}
+const run = async f => { try { await f(); } catch (e) { toast(e.message, false); } };
+
+function logout() { sessionStorage.clear(); S.token = S.role = S.name = S.dept = ""; render(); }
+function render() {
+  const on = !!S.token;
+  $("#who").innerHTML = on ? `${S.name === roleLabel() || roleLabel().endsWith(S.name) ? "" : esc(S.name) + " "}<span class="rl">${roleLabel()}</span>` : ""; $("#out").classList.toggle("hide", !on); $("#bell").classList.toggle("hide", !on);
+  if (!on) return authView();
+  ({ student: studentView, officer: staffView, authority: staffView, admin: adminView })[S.role]();
+  loadNotes();
+}
+
+/* ---------- AUTH ---------- */
+let CFG = { domain: "mgmcen.ac.in", example: "s23_surname_firstname@mgmcen.ac.in", sections_by_year: { SY: ["A", "B", "C"], TY: ["A", "B", "C"], BTech: ["A", "B"] }, academic_year_start: 2026, year_by_admission_offset: { "1": "SY", "2": "TY", "3": "BTech" } }, resetEmail = "";
+const EMAIL_RE = /^[\w.+-]+@[\w-]+(\.[\w-]+)+$/;
+const PW_RULES = [["8+ characters", p => p.length >= 8], ["Uppercase letter", p => /[A-Z]/.test(p)], ["Lowercase letter", p => /[a-z]/.test(p)], ["A number", p => /\d/.test(p)], ["Special character", p => /[^\w\s]/.test(p)]];
+const setErr = (id, m) => { const e = $("#" + id + "_e"); if (e) e.textContent = m || ""; const i = $("#" + id); if (i) i.classList.toggle("bad", !!m); return !m; };
+const vEmail = (id = "e", dom = false) => {
+  const raw = $("#" + id).value.trim();
+  if (/[A-Z]/.test(raw)) return setErr(id, "Email must be in lowercase only");
+  const v = raw;
+  return setErr(id, !v ? "Email is required" : !EMAIL_RE.test(v) ? "Enter a valid email address" : dom && !v.endsWith("@" + CFG.domain) ? `Use your college email (@${CFG.domain})` : dom && !/^s\d{2}_[a-z]+(_[a-z]+)+$/.test(v.split("@")[0]) ? `Student email looks like ${CFG.example}` : "");
+};
+const NAME_RE = /^[A-Za-z][A-Za-z .'-]*$/;
+const vName = () => { const v = $("#n").value.trim(); return setErr("n", v.length < 2 || v.length > 60 ? "Name must be 2-60 characters" : !NAME_RE.test(v) ? "Name can only contain letters, spaces, apostrophes and hyphens" : ""); };
+const vConfirm = () => setErr("p2", $("#p2").value !== $("#p").value ? "Passwords do not match" : "");
+const vPw = () => {
+  const v = $("#p").value, ok = PW_RULES.filter(r => r[1](v)).length;
+  if ($("#rules")) { $("#rules").innerHTML = PW_RULES.map(r => `<span class="${r[1](v) ? "ok" : ""}">${r[1](v) ? "✓" : "○"} ${r[0]}</span>`).join(""); const m = $(".meter i"); m.style.width = ok * 20 + "%"; m.style.background = ok < 3 ? "#b3312c" : ok < 5 ? "#b3752f" : "#3d6b52"; }
+  return setErr("p", !v ? "Password is required" : ok < PW_RULES.length ? "Password does not meet all requirements" : "");
+};
+const pwField = (id, label, on = "") => `<label>${label}</label><div class="pw"><input id="${id}" type="password" autocomplete="${id === "p2" ? "new-password" : "current-password"}" ${on}><button type="button" onclick="eye('${id}',this)">Show</button></div><div class="err" id="${id}_e"></div>`;
+const eye = (id, b) => { const i = $("#" + id), h = i.type === "password"; i.type = h ? "text" : "password"; b.textContent = h ? "Hide" : "Show"; };
+const busy = (on, label) => { const b = $("#go"); if (!b) return; b.dataset.t = b.dataset.t || b.textContent; b.disabled = on; b.textContent = on ? label : b.dataset.t; };
+const roleLabel = () => S.role === "officer" && S.dept ? "Officer · " + S.dept : S.role === "authority" ? (S.level == 2 ? "Principal" : "HOD") : S.role.charAt(0).toUpperCase() + S.role.slice(1);
+
+function authView(tab = "login") {
+  const strong = `<div class="rules" id="rules"></div><div class="meter"><i></i></div>`;
+  const forms = {
+    login: `<label>College email</label><input id="e" type="email" autocomplete="username" placeholder="Your college email" oninput="vEmail()"><div class="err" id="e_e"></div>${pwField("p", "Password")}<div class="err" id="fe"></div><button id="go" style="width:100%" onclick="doLogin()">Login</button><p class="mute" style="text-align:center;margin:12px 0 0">Everyone signs in here with their own college email. Your account decides which dashboard opens (Student, Officer, HOD, Principal or Admin).</p>`,
+    register: `<label>Full name</label><input id="n" maxlength="60" oninput="vName()"><div class="err" id="n_e"></div><label>College email</label><input id="e" type="email" placeholder="${CFG.example}" oninput="vEmail('e',true);onEmailChange()"><div class="err" id="e_e"></div>
+    <div class="row"><div><label>Your class <span class="mute">(detected from email)</span></label><input id="yr" disabled placeholder="Type your email above"></div><div><label>Section</label><select id="sec"></select></div></div>
+    ${pwField("p", "Create password", 'oninput="vPw()"')}${strong}${pwField("p2", "Confirm password", 'oninput="vConfirm()"')}<div class="err" id="fe"></div><button id="go" style="width:100%" onclick="doRegister()">Create student account</button>`,
+    forgot: `<div id="s1"><label>College email</label><input id="e" type="email" oninput="vEmail()"><div class="err" id="e_e"></div><div class="err" id="fe"></div><button id="go" style="width:100%" onclick="doForgot()">Send OTP</button></div><div id="s2" class="hide"><label>6-digit OTP</label><input id="o" maxlength="6" inputmode="numeric"><div class="err" id="o_e"></div>${pwField("p", "New password", 'oninput="vPw()"')}${strong}${pwField("p2", "Confirm new password", 'oninput="vConfirm()"')}<div class="err" id="fe2"></div><button id="go" style="width:100%" onclick="doReset()">Reset password</button></div>`
+  };
+  $("#app").innerHTML = `<div class="auth"><div class="ahead"><h1>Computer Science Department<br>Complaint System</h1><p>Sign in as Student, Officer, HOD, Principal or Admin</p></div>
+  <div class="authf"><div class="tabs">${["login", "register", "forgot"].map(t => `<button class="${t === tab ? "on" : ""}" onclick="authView('${t}')">${{ login: "Login", register: "New student? Register", forgot: "Forgot password" }[t]}</button>`).join("")}</div>${forms[tab]}</div></div>`;
+  $("#app").onkeydown = e => { if (e.key === "Enter" && e.target.tagName === "INPUT") $("#go")?.click(); };
+  if ($("#rules")) vPw();
+  if ($("#yr")) onEmailChange();
+}
+function detectYear(email) {
+  const m = /^s(\d{2})_/.exec((email || "").split("@")[0].toLowerCase());
+  if (!m) return null;
+  const offset = CFG.academic_year_start - (2000 + parseInt(m[1], 10));
+  return CFG.year_by_admission_offset[String(offset)] || null;
+}
+function onEmailChange() {
+  const year = detectYear($("#e").value);
+  $("#yr").value = year || "";
+  const secs = CFG.sections_by_year[year] || [];
+  $("#sec").innerHTML = secs.length ? secs.map(s => `<option value="${s}">${s}</option>`).join("")
+    : `<option value="">Enter your email first</option>`;
+}
+async function doLogin() {
+  const a = vEmail(), b = setErr("p", $("#p").value ? "" : "Password is required"); if (!(a && b)) return;
+  $("#fe").textContent = ""; busy(true, "Signing in...");
+  try {
+    const d = await api("/auth/login", { method: "POST", form: new URLSearchParams({ username: $("#e").value.trim(), password: $("#p").value }) });
+    Object.assign(S, { token: d.access_token, role: d.role, name: d.name, level: d.level || 0, dept: d.department || "" }); ["token", "role", "name", "level", "dept"].forEach(k => sessionStorage[k] = S[k]); render();
+  } catch (e) { $("#fe").textContent = e.message; busy(false); }
+}
+async function doRegister() {
+  if (![vName(), vEmail("e", true), vPw(), vConfirm()].every(Boolean)) return;
+  if (!detectYear($("#e").value)) { $("#fe").textContent = "This email's admission year doesn't match an active class (SY/TY/BTech)."; return; }
+  $("#fe").textContent = ""; busy(true, "Creating...");
+  try { await api("/auth/register", { method: "POST", body: { name: $("#n").value, email: $("#e").value, password: $("#p").value, section: $("#sec").value } }); toast("Account created. Please log in."); authView("login"); }
+  catch (e) { $("#fe").textContent = e.message; busy(false); }
+}
+async function doForgot() {
+  if (!vEmail()) return; busy(true, "Sending...");
+  try {
+    const d = await api("/auth/forgot", { method: "POST", body: { email: $("#e").value.trim() } }); resetEmail = $("#e").value.trim(); $("#s1").remove();
+    $("#s2").classList.remove("hide"); $("#s2").insertAdjacentHTML("afterbegin", `<div class="result" style="margin:0 0 12px">${d.debug_otp ? `Demo mode OTP: <b>${d.debug_otp}</b>` : "If the email exists, an OTP was sent to it."}</div>`);
+  } catch (e) { $("#fe").textContent = e.message; busy(false); }
+}
+async function doReset() {
+  const o = setErr("o", /^\d{6}$/.test($("#o").value.trim()) ? "" : "Enter the 6-digit OTP"); if (![o, vPw(), vConfirm()].every(Boolean)) return;
+  busy(true, "Updating...");
+  try { await api("/auth/reset", { method: "POST", body: { email: resetEmail, otp: $("#o").value.trim(), new_password: $("#p").value } }); toast("Password updated. Please log in."); authView("login"); }
+  catch (e) { $("#fe2").textContent = e.message; busy(false); }
+}
+const ministats = (sel, l) => {
+  const open = l.filter(c => !["Resolved", "Closed"].includes(c.status)), over = open.filter(c => c.sla_due && new Date(c.sla_due + "Z") < new Date()).length;
+  $(sel).innerHTML = [["Total", l.length], ["Open", open.length], ["Resolved", l.length - open.length], ["Escalated", l.filter(c => c.escalation_level > 0 && !c.direct_to_hod).length], ["Overdue", over]].map(([k, v]) => `<div class="stat"><b>${v}</b>${k}</div>`).join("");
+};
+
+/* ---------- SHARED COMPLAINT CARD ---------- */
+function card(c, mode) {
+  const tl = c.history.map(h => `<li>${esc(h.status)} <span class="mute">${when(h.at)}${h.remarks ? " - " + esc(h.remarks) : ""}</span></li>`).join("");
+  let act = "";
+  if (mode === "student" && ["Resolved", "Closed"].includes(c.status))
+    act = (c.rating ? `<span class="mute">You rated ${c.rating}/5</span>` : `<div><label>Rating <span class="req">*</span></label><select id="r${c.id}"><option value="5">5 - Excellent</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1 - Poor</option></select></div><div style="flex:2"><label>Feedback <span class="mute">(optional)</span></label><input id="f${c.id}"></div><button class="sm" onclick="rate(${c.id})">Rate</button>`) + `<button class="ghost sm" onclick="reopen(${c.id})">Reopen</button>`;
+  if (mode === "staff" && !["Closed"].includes(c.status)) {
+    const lab = S.dept === "Lab Assistant";
+    act = `<div><label>Status <span class="req">*</span></label><select id="s${c.id}" onchange="qStar(${c.id})"><option>In Progress</option>${lab ? "<option>Query</option>" : ""}<option>Resolved</option><option>Closed</option></select></div><div style="flex:2"><label>${lab ? "Remark / Query" : "Remark"} <span class="req hide" id="rs${c.id}">*</span></label><input id="m${c.id}" placeholder="${lab ? "Type a remark, or your question if status is Query" : "Remarks"}"></div><button class="sm" onclick="upd(${c.id})">Update</button>`;
+  }
+  if (mode === "admin") act = `<div><label>Reassign to <span class="req">*</span></label><select id="a${c.id}">${(window.OFF || []).map(o => `<option value="${o.id}">${esc(o.name)}</option>`).join("")}</select></div><button class="sm" onclick="assign(${c.id})">Reassign</button>`;
+  return `<div class="cc"><h3>${esc(c.title)} <small>${esc(c.code)}</small></h3>
+  <span class="b ${PRI[c.priority]}">${esc(c.priority)}</span><span class="b">${esc(c.category)}</span><span class="b st">${esc(c.status)}</span>
+  ${c.direct_to_hod ? `<span class="b esc">Sent directly to HOD</span>` : c.escalation_level ? `<span class="b esc">Escalated L${c.escalation_level}</span>` : ""}${c.sentiment !== "Neutral" ? `<span class="b">${esc(c.sentiment)}</span>` : ""}${c.is_anonymous ? `<span class="b">Anonymous</span>` : ""}${c.duplicate_count ? `<span class="b">${c.duplicate_count + 1} similar reports</span>` : ""}
+  <p style="margin:8px 0">${esc(c.description)}</p>
+  <div class="meta">
+    <div><b>Submitted by</b>${esc(c.student_name)}${c.student_class ? " (" + esc(c.student_class) + ")" : ""}</div>
+    ${c.lab_number ? `<div><b>Lab</b>Lab ${c.lab_number}</div>` : ""}
+    <div><b>Assigned to</b>${esc(c.assigned_to || "Not yet assigned")}</div>
+    <div><b>Deadline</b>${when(c.sla_due)}${["Resolved", "Closed"].includes(c.status) ? "" : (new Date(c.sla_due + "Z") < new Date() ? ` <span class="b esc">Overdue</span>` : "")}</div>${mode === "student" ? "" : `<div><b>AI confidence</b>${Math.round(c.confidence * 100)}%</div>`}
+    ${c.keywords.length ? `<div><b>Key terms</b>${esc(c.keywords.join(", "))}</div>` : ""}
+    ${c.has_attachment ? `<div><b>Attachment</b><a href="#" onclick="openFile(${c.id});return false">View file</a></div>` : ""}
+  </div>
+  <ul class="tl">${tl}</ul>${act ? `<div class="act">${act}</div>` : ""}</div>`;
+}
+const openFile = id => run(async () => { const r = await fetch(`/complaints/${id}/attachment`, { headers: { Authorization: "Bearer " + S.token } }); if (!r.ok) throw new Error("Cannot open file"); window.open(URL.createObjectURL(await r.blob())); });
+
+/* ---------- STUDENT ---------- */
+function studentView() {
+  const catList = [
+    ["Teaching & Syllabus", "Faculty not covering syllabus, lectures not conducted, doubts not cleared, teaching quality."],
+    ["Lab & Equipment", "Computers/systems not working, software missing, printers, servers, lab machines."],
+    ["Classroom Infrastructure", "Projector, wifi, fans/lights, benches, washrooms - the classroom/building itself."],
+    ["Timetable & Attendance", "Timetable clashes, wrong attendance marked, schedule/batch issues."],
+    ["Exams & Marks", "Hall tickets, results, marks missing, revaluation, question paper errors."],
+    ["Projects & Placements", "Project guide issues, internship/placement problems, company visits."],
+    ["Ragging & Harassment", "Ragging, bullying, harassment or threats - goes straight to the HOD."],
+    ["Other", "Anything that doesn't fit above - goes to the Admin Desk."],
+  ];
+  $("#app").innerHTML = `<h2 class="ptitle">Student Dashboard</h2><div class="grid" id="sst"></div><div class="card"><h2>Submit a complaint</h2><p class="mute" style="margin:-6px 0 10px"><span class="req">*</span> Required field. Evidence upload is optional.</p>
+  <details style="margin-bottom:10px"><summary style="cursor:pointer;color:var(--mute);font-size:13px">What category will the AI pick? (based on your title + description)</summary>
+  <div style="margin-top:8px;display:grid;gap:4px;font-size:12.5px">${catList.map(([n, d]) => `<div><b>${n}:</b> <span class="mute">${d}</span></div>`).join("")}</div></details>
+  <label>Title <span class="req">*</span></label><input id="t" maxlength="120"><label>Describe the problem (20-2000 characters) <span class="req">*</span> <span id="len"></span></label><textarea id="d" maxlength="2000"></textarea>
+  <div class="row"><div><label>Evidence (jpg, png, pdf, max 5 MB)</label><input id="fl" type="file" accept=".jpg,.jpeg,.png,.pdf"></div><label style="display:flex;gap:8px;align-items:center;margin:0"><input id="an" type="checkbox" style="width:auto;margin:0"> Submit anonymously</label></div>
+  <label>Type of problem <span class="req">*</span></label><div id="catwarn" class="hide" style="background:#fff4e5;border:1px solid #f0a020;color:#8a5a00;padding:8px 10px;border-radius:8px;margin:6px 0;font-size:13px"></div>
+  <select id="cat" onchange="refreshLock()">${catList.map(([n]) => `<option value="${n}">${n}</option>`).join("")}</select>
+  <div id="labbox" class="hide"><label>Which lab? <span class="req">*</span> <span class="mute">(mention the lab number)</span></label><select id="labno"><option value="">-- Select lab number --</option>${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}">Lab ${n}</option>`).join("")}</select></div>
+  <button id="subbtn" onclick="submitC()">Submit complaint</button><div id="result"></div></div>
+  <div class="card"><h2>My complaints</h2><div id="list"></div></div>`;
+  labSel(); $("#d").oninput = e => { $("#len").textContent = `(${e.target.value.length}/2000)`; scheduleCheck(); }; $("#t").oninput = scheduleCheck; myList();
+}
+const labSel = () => $("#labbox").classList.toggle("hide", $("#cat").value !== "Lab & Equipment");
+/* Live "wrong problem type" guard: if the text clearly belongs to another type (e.g. a lab issue
+   but "Classroom Infrastructure" chosen), warn, lock every other option except the right one, and block Submit. */
+let checkTimer, checkSeq = 0;
+const scheduleCheck = () => { clearTimeout(checkTimer); checkTimer = setTimeout(checkCategory, 500); };
+let curSuggest = null;
+function lockCategory(suggested) { curSuggest = suggested || null; refreshLock(); }
+function refreshLock() {
+  const sel = $("#cat"), warn = $("#catwarn"), btn = $("#subbtn"), sg = curSuggest;
+  [...sel.options].forEach(o => o.disabled = !!sg && o.value !== sg);     // only the matching type stays clickable
+  if (sg) {
+    const wrong = sel.value !== sg;
+    warn.classList.remove("hide");
+    warn.innerHTML = wrong ? `<b>Wrong problem type selected.</b> Your description looks like a <b>${esc(sg)}</b> problem. Please select <b>${esc(sg)}</b> - the other options are disabled. (If this is not what you meant, edit your description.)`
+                           : `Problem type matches your description: <b>${esc(sg)}</b>.`;
+    warn.style.background = wrong ? "#fff4e5" : "#e8f7ee"; warn.style.borderColor = wrong ? "#f0a020" : "#3cb371"; warn.style.color = wrong ? "#8a5a00" : "#1d6b3f";
+    btn.disabled = wrong; btn.title = wrong ? `Select "${sg}" to submit` : "";
+  } else { warn.classList.add("hide"); btn.disabled = false; btn.title = ""; }
+  labSel();
+}
+async function checkCategory() {
+  const my = ++checkSeq, fd = new FormData(); fd.append("title", $("#t").value); fd.append("description", $("#d").value);
+  try { const r = await api("/complaints/check-category", { method: "POST", form: fd }); if (my === checkSeq) lockCategory(r.suggested); }
+  catch (e) { if (my === checkSeq) lockCategory(null); }      // if the check fails, don't block the student - the server re-checks on submit
+}
+const myList = () => run(async () => { const l = await api("/complaints/my"); ministats("#sst", l); $("#list").innerHTML = l.map(c => card(c, "student")).join("") || `<p class="mute">No complaints yet.</p>`; });
+const submitC = () => run(async () => {
+  const t = $("#t").value.trim(), d = $("#d").value.trim();
+  if (t.length < 5) throw new Error("Title must be at least 5 characters");
+  if (d.length < 20) throw new Error("Description must be at least 20 characters");
+  const isLab = $("#cat").value === "Lab & Equipment"; if (isLab && !$("#labno").value) throw new Error("Please select the lab number for a lab complaint");
+  const f = $("#fl").files[0]; if (f && f.size > 5 * 1048576) throw new Error("File must be under 5 MB");
+  const fd = new FormData(); fd.append("title", t); fd.append("description", d); fd.append("anonymous", $("#an").checked); fd.append("category", $("#cat").value); if (isLab) fd.append("lab_number", $("#labno").value); if (f) fd.append("file", f);
+  const c = await api("/complaints", { method: "POST", form: fd });
+  $("#result").innerHTML = `<div class="result"><b>${esc(c.code)} submitted.</b><br>Routed to <b>${esc(c.assigned_to || "admin")}</b> under <b>${esc(c.category)}</b>.${c.duplicate_of ? "<br>Similar complaint already exists, your report was linked to it." : ""}</div>`;
+  ["t", "d", "fl"].forEach(i => $("#" + i).value = ""); $("#an").checked = false; lockCategory(null); myList(); loadNotes();
+});
+const rate = id => run(async () => { await api(`/complaints/${id}/feedback`, { method: "POST", body: { rating: +$("#r" + id).value, comment: $("#f" + id).value } }); toast("Thanks for your feedback"); myList(); });
+const reopen = id => run(async () => { await api(`/complaints/${id}/reopen`, { method: "POST" }); toast("Complaint reopened"); myList(); });
+
+/* ---------- OFFICER / AUTHORITY ---------- */
+function staffView() {
+  $("#app").innerHTML = `<h2 class="ptitle">${roleLabel()} Dashboard</h2><div class="grid" id="sst"></div><div id="astats"></div><div class="card"><div class="row"><h2 style="flex:1;margin:0">${S.role === "authority" ? "Direct & escalated complaints" : "Assigned complaints"}</h2><input id="q" oninput="staffList()" placeholder="Search..." style="max-width:220px;margin:0">
+  <select id="flt" onchange="staffList()" style="max-width:190px;margin:0"><option value="">All statuses</option>${["Assigned", "In Progress", ...(S.dept === "Lab Assistant" ? ["Query"] : []), "Escalated", "Reopened", "Resolved", "Closed"].map(s => `<option>${s}</option>`).join("")}</select></div><div id="list" style="margin-top:14px"></div></div>`;
+  if (S.role === "authority") api("/analytics").then(a => $("#astats").innerHTML = `<div class="card"><h2>Analytics</h2>${statsHTML(a)}</div>`).catch(() => {});
+  staffList();
+}
+const ORDER = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+const staffList = () => run(async () => {
+  const all = await api("/complaints/assigned"); ministats("#sst", all); const f = $("#flt").value, q = $("#q").value.toLowerCase(), l = all.filter(c => (!f || c.status === f) && (!q || (c.title + c.description + c.code + c.category).toLowerCase().includes(q))).sort((a, b) => ORDER[a.priority] - ORDER[b.priority] || b.id - a.id);
+  $("#list").innerHTML = l.map(c => card(c, "staff")).join("") || `<p class="mute">Nothing here.</p>`;
+});
+const qStar = id => $("#rs" + id)?.classList.toggle("hide", $("#s" + id).value !== "Query");
+const upd = id => run(async () => { if ($("#s" + id).value === "Query" && !$("#m" + id).value.trim()) throw new Error("Please write your question for the student in Remarks"); await api(`/complaints/${id}/status`, { method: "PATCH", body: { status: $("#s" + id).value, remarks: $("#m" + id).value || null } }); toast("Status updated"); (S.role === "admin" ? adminList : staffList)(); loadNotes(); });
+
+/* ---------- ADMIN ---------- */
+function adminView() {
+  $("#app").innerHTML = `<h2 class="ptitle">Admin Dashboard</h2><div class="card"><div class="row"><h2 style="flex:1;margin:0">Analytics</h2><button class="ghost sm" onclick="runEsc()">Run escalation check now</button></div><div id="stats" style="margin-top:12px"></div></div>
+  <div class="card"><h2>All complaints</h2><div id="list"></div></div>
+  <div class="card"><h2>Create staff account</h2><p class="mute" style="margin:-6px 0 10px"><span class="req">*</span> Required field</p><div class="row" style="align-items:flex-end"><div><label>Name <span class="req">*</span></label><input id="un" placeholder="Name"></div><div><label>Email <span class="req">*</span></label><input id="ue" placeholder="Email"></div><div><label>Password <span class="req">*</span></label><input id="up" type="password" placeholder="Password"></div><div><label>Role <span class="req">*</span></label><select id="ur" onchange="depSel()"><option>officer</option><option>authority</option><option>admin</option></select></div><div><label>Department / Level <span class="req">*</span></label><select id="ud" onchange="depSel2()"></select></div><div id="clsbox" style="display:none"><label>Class <span class="req">*</span></label><select id="uy" style="width:auto"><option>SY</option><option>TY</option><option>BTech</option></select> <select id="usec" style="width:auto"><option>A</option><option>B</option><option>C</option></select></div><button onclick="mkUser()">Create</button></div></div>
+  <div class="card"><h2>Class Incharges</h2><p class="mute" style="margin:-6px 0 10px">Complaints from a class go only to that class's Class Incharge.</p><div id="cis"></div></div>
+  <div class="card"><h2>Users</h2><div id="users"></div></div><div class="card"><h2>Audit log</h2><div id="audit"></div></div>`;
+  adminLoad();
+}
+const bars = o => { const m = Math.max(1, ...Object.values(o)); return Object.entries(o).map(([k, v]) => `<div class="bar"><span>${esc(k)}</span><i style="width:${v / m * 200 + 4}px"></i><span>${v}</span></div>`).join("") || `<span class="mute">No data</span>`; };
+const statsHTML = a => `<div class="grid">${[["Total", a.total], ["Pending", a.pending], ["Resolved", a.resolved], ["Escalated", a.escalated], ["Overdue", a.overdue], ["Avg resolution (h)", a.avg_resolution_hours ?? "-"], ["Avg rating", a.avg_rating ?? "-"]].map(([k, v]) => `<div class="stat"><b>${v}</b>${k}</div>`).join("")}</div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))"><div><h3>By category</h3>${bars(a.by_category)}</div><div><h3>By priority</h3>${bars(a.by_priority)}</div><div><h3>By status</h3>${bars(a.by_status)}</div></div>
+  <h3>Hotspots (most repeated issues)</h3>${a.hotspots.map(h => `<div class="mute">${esc(h.code)} - ${esc(h.title)}: <b>${h.reports}</b> reports</div>`).join("") || `<span class="mute">None yet</span>`}`;
+const adminLoad = () => run(async () => {
+  const [a, deps, off, us, au, cis] = await Promise.all([api("/analytics"), api("/admin/departments"), api("/admin/officers"), api("/admin/users"), api("/admin/audit"), api("/admin/class-incharges")]);
+  window.OFF = off; window.DEPS = deps;
+  const ciOff = us.filter(u => u.department === "Class Incharge");
+  $("#cis").innerHTML = `<table><tr><th>Class</th><th>Class Incharge</th><th>Change to</th><th></th></tr>${cis.map(c => `<tr><td>${c.year === "BTech" ? "B.Tech" : esc(c.year) + " B.Tech"} - ${esc(c.section)}</td><td>${c.officer_name ? esc(c.officer_name) + `<div class="mute">${esc(c.email)}</div>` : `<span class="mute">Not assigned</span>`}</td><td><select id="ci_${c.year}_${c.section}">${ciOff.map(o => `<option value="${o.id}" ${o.id === c.officer_id ? "selected" : ""}>${esc(o.name)}${o.year ? " (" + esc(o.year) + "-" + esc(o.section) + ")" : " (no class)"}</option>`).join("")}</select></td><td><button class="sm" onclick="setCI('${c.year}','${c.section}')">Assign</button> ${c.officer_id ? `<a href="#" onclick="editStaff(${c.officer_id},'${esc(c.officer_name).replace(/'/g, "")}','${esc(c.email)}');return false">edit details</a>` : ""}</td></tr>`).join("")}</table>`;
+  $("#stats").innerHTML = statsHTML(a);
+  $("#users").innerHTML = `<table><tr><th>Name</th><th>Email</th><th>Role</th><th>Dept / Level</th><th>Alert email (real)</th></tr>${us.filter(u => u.role !== "student").map(u => `<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td>${esc(u.role)}</td><td>${esc(u.department || (u.level || "-"))}${u.department === "Class Incharge" ? (u.year ? " (" + esc(u.year) + "-" + esc(u.section) + ")" : " (no class)") : ""}</td><td>${u.notify_email ? esc(u.notify_name || u.name) + " &lt;" + esc(u.notify_email) + "&gt;" : `<span class="mute">not set</span>`} <a href="#" onclick="setMail(${u.id},'${esc(u.notify_name || u.name).replace(/'/g, "")}','${esc(u.notify_email || "")}');return false">${u.notify_email ? "change" : "set"}</a></td></tr>`).join("")}</table>`;
+  $("#audit").innerHTML = `<table><tr><th>Time</th><th>Who</th><th>Action</th><th>Detail</th></tr>${au.slice(0, 40).map(r => `<tr><td>${when(r.at)}</td><td>${esc(r.user)}</td><td>${esc(r.action)}</td><td>${esc(r.detail)}</td></tr>`).join("")}</table>`;
+  depSel(); adminList();
+});
+const depSel = () => { const r = $("#ur").value; $("#ud").innerHTML = r === "officer" ? DEPS.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join("") : r === "authority" ? `<option value="1">Level 1 (HOD)</option><option value="2">Level 2 (Principal)</option>` : `<option value="0">-</option>`; if (window.DEPS) depSel2(); };
+const adminList = () => run(async () => { const l = await api("/complaints/assigned"); $("#list").innerHTML = l.map(c => card(c, "admin") + "").join("") || `<p class="mute">No complaints yet.</p>`; });
+const assign = id => run(async () => { await api(`/admin/complaints/${id}/assign`, { method: "POST", body: { officer_id: +$("#a" + id).value } }); toast("Reassigned"); adminLoad(); });
+const runEsc = () => run(async () => { const d = await api("/admin/run-escalation", { method: "POST" }); toast(`${d.escalated} complaint(s) escalated`); adminLoad(); });
+const setMail = (id, nm, cur) => run(async () => {
+  const name = prompt("Name to show in the email (e.g. Ms Dumne Rakhi Shivajirao):", nm); if (name === null) return;
+  const mail = prompt("Real email address for alerts (leave empty to switch alerts off):", cur); if (mail === null) return;
+  await api(`/admin/users/${id}/notify-email`, { method: "PATCH", body: { notify_email: mail, notify_name: name } }); toast("Alert email saved"); adminLoad();
+});
+const mkUser = () => run(async () => { const r = $("#ur").value, v = +$("#ud").value; await api("/admin/users", { method: "POST", body: { name: $("#un").value, email: $("#ue").value, password: $("#up").value, role: r, department_id: r === "officer" ? v : null, level: r === "authority" ? v : 0, ...(isCI() ? { year: $("#uy").value, section: $("#usec").value } : {}) } }); toast("User created"); adminLoad(); });
+const isCI = () => $("#ur").value === "officer" && (DEPS.find(d => d.id === +$("#ud").value) || {}).name === "Class Incharge";
+const depSel2 = () => { $("#clsbox").style.display = isCI() ? "block" : "none"; };
+const setCI = (y, sec) => run(async () => { const d = await api(`/admin/class-incharges/${y}/${sec}`, { method: "PUT", body: { officer_id: +$(`#ci_${y}_${sec}`).value } }); toast(d.message); adminLoad(); });
+const editStaff = (id, nm, em) => run(async () => {
+  const name = prompt("Class Incharge name:", nm); if (name === null) return;
+  const email = prompt("Login email:", em); if (email === null) return;
+  await api(`/admin/users/${id}`, { method: "PATCH", body: { name, email } }); toast("Details updated"); adminLoad();
+});
+
+/* ---------- NOTIFICATIONS ---------- */
+const loadNotes = () => S.token && api("/notifications").then(n => {
+  const u = n.filter(x => !x.is_read).length; $("#cnt").textContent = u ? `(${u})` : "";
+  $("#notes").innerHTML = n.map(x => `<p>${x.is_read ? "" : "<b>New</b> "}${esc(x.message)}<br><span class="mute">${when(x.at)}</span></p>`).join("") || `<p class="mute">No alerts</p>`;
+}).catch(() => {});
+const toggleNotes = () => { const e = $("#notes"), open = e.style.display === "block"; e.style.display = open ? "none" : "block"; if (!open) api("/notifications/read", { method: "POST" }).then(() => setTimeout(() => $("#cnt").textContent = "", 300)); };
+setInterval(loadNotes, 30000);
+fetch("/auth/config").then(r => r.json()).then(c => CFG = c).catch(() => {}).finally(render);
+</script>
+</body>
+</html>
